@@ -3,14 +3,10 @@ CODE_WARN = 1
 CODE_ERR  = 2
 
 def testForMetadataToBePresent(path, bytes, plaintext, lyrics, metadata, database):
-  if len(metadata) < 1:
-    return CODE_ERR
-  return CODE_OK
+  return CODE_ERR if len(metadata) < 1 else CODE_OK
 
 def testForRequiredMetadataKeysToBePresent(path, bytes, plaintext, lyrics, metadata, database):
-  if not 'Name' in metadata or not 'Artist' in metadata:
-    return CODE_ERR
-  return CODE_OK
+  return CODE_OK if 'Name' in metadata and 'Artist' in metadata else CODE_ERR
 
 def testForUnknownMetadataKeys(path, bytes, plaintext, lyrics, metadata, database):
   keys = list(metadata.keys())
@@ -29,10 +25,8 @@ def testForUnknownMetadataKeys(path, bytes, plaintext, lyrics, metadata, databas
     "Original text by",
     "Original text copyright",
   ]
-  for key in keys:
-    if not key in knownMetadataKeys:
-      return CODE_ERR
-  return CODE_OK
+  return next((CODE_ERR for key in keys if key not in knownMetadataKeys),
+              CODE_OK)
 
 def testForDuplicateTrackNumbers(path, bytes, plaintext, lyrics, metadata, database):
   trackNumber = metadata['Track no'] if 'Track no' in metadata else None
@@ -41,16 +35,15 @@ def testForDuplicateTrackNumbers(path, bytes, plaintext, lyrics, metadata, datab
     discNumber = metadata['Disc no'] if 'Disc no' in metadata else None
     for (k, v) in database.items():
       if k.startswith(albumPath) and k != path:
-          tN = v['m']['Track no'] if 'Track no' in v['m'] else None
-          if tN != None:
-            if discNumber == None:
-              if tN == trackNumber:
-                return CODE_ERR
-            else:
-              dN = v['m']['Disc no'] if 'Disc no' in v['m'] else None
-              if dN != None:
-                if dN == discNumber and tN == trackNumber:
-                  return CODE_ERR
+        tN = v['m']['Track no'] if 'Track no' in v['m'] else None
+        if tN != None:
+          if discNumber is None:
+            if tN == trackNumber:
+              return CODE_ERR
+          else:
+            dN = v['m']['Disc no'] if 'Disc no' in v['m'] else None
+            if dN != None and dN == discNumber and tN == trackNumber:
+              return CODE_ERR
   return CODE_OK
 
 def testForMatchingArtistNames(path, bytes, plaintext, lyrics, metadata, database):
@@ -59,9 +52,9 @@ def testForMatchingArtistNames(path, bytes, plaintext, lyrics, metadata, databas
     albumPath = "/".join(path.split("/")[:-1]) + "/"
     for (k, v) in database.items():
       if k.startswith(albumPath) and k != path:
-          tA = v['m']['Artist'][0] if 'Artist' in v['m'] else None
-          if tA != None and tA != trackArtist:
-                return CODE_ERR
+        tA = v['m']['Artist'][0] if 'Artist' in v['m'] else None
+        if tA not in [None, trackArtist]:
+          return CODE_ERR
   return CODE_OK
 
 def testForMatchingAlbumNames(path, bytes, plaintext, lyrics, metadata, database):
@@ -70,30 +63,30 @@ def testForMatchingAlbumNames(path, bytes, plaintext, lyrics, metadata, database
     albumPath = "/".join(path.split("/")[:-1]) + "/"
     for (k, v) in database.items():
       if k.startswith(albumPath) and k != path:
-          tA = v['m']['Album'][0] if 'Album' in v['m'] else None
-          if tA != None and tA != trackAlbum:
-                return CODE_ERR
+        tA = v['m']['Album'][0] if 'Album' in v['m'] else None
+        if tA not in [None, trackAlbum]:
+          return CODE_ERR
   return CODE_OK
 
 def testForProperMetadataLanguageValues(path, bytes, plaintext, lyrics, metadata, database):
   keys = list(metadata.keys())
-  properMetadataLanguageValues = [
-    "Unknown",
-    "American English",
-    "Australian English",
-    "British English",
-    "Canadian English",
-    "Dutch",
-    "French",
-    "Italian",
-    "German",
-    "New Zealand English",
-    "Portuguese",
-    "Scottish English",
-  ]
   if "Language" in keys:
+    properMetadataLanguageValues = [
+      "Unknown",
+      "American English",
+      "Australian English",
+      "British English",
+      "Canadian English",
+      "Dutch",
+      "French",
+      "Italian",
+      "German",
+      "New Zealand English",
+      "Portuguese",
+      "Scottish English",
+    ]
     for language in metadata['Language']:
-      if not language in properMetadataLanguageValues:
+      if language not in properMetadataLanguageValues:
         return CODE_ERR
   return CODE_OK
 

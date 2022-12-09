@@ -38,10 +38,7 @@ def splitLyricsIntoTextAndMetadata(lyricsFileContents):
 def getText(lyricsFileContents):
   partials = splitLyricsIntoTextAndMetadata(lyricsFileContents)
   lyricsText = ""
-  if len(partials) > 1:
-    lyricsText = partials[0]
-  else:
-    lyricsText = lyricsFileContents
+  lyricsText = partials[0] if len(partials) > 1 else lyricsFileContents
   ## Trim text
   lyricsText = lyricsText.strip()
   return lyricsText
@@ -60,7 +57,7 @@ def parseMetadata(metadata):
   for line in metadata.splitlines():
     line = line.rstrip() ## Discard trailing whitespaces
     if line[0] == ' ':
-      if len(datalines) == 0:
+      if not datalines:
         print('Warning: metadata keys cannot begin with a space')
       else:
         ## The value is split between multiple lines,
@@ -102,10 +99,7 @@ def formatTestStatusLabel(code):
   return result
 
 def boldText(text):
-  if supportsColors():
-    return colors.BOLD + text + colors.RESET_ALL
-  else:
-    return text
+  return colors.BOLD + text + colors.RESET_ALL if supportsColors() else text
 
 def printStats(lines):
   print("_" * len(lines[0]))
@@ -135,10 +129,8 @@ def readDatabaseDirectory(databaseSourceDir):
             else:
               for recording in sorted(os.listdir(albumPath), key=str.lower):
                 recordingPath = os.path.join(albumPath, recording)
-                # Read file as bytes
-                file = open(recordingPath, 'rb')
-                lyricsFileBinaryContents = file.read()
-                file.close()
+                with open(recordingPath, 'rb') as file:
+                  lyricsFileBinaryContents = file.read()
                 lyricsFileContents = lyricsFileBinaryContents.decode('utf-8')
                 recordingShortPath = os.path.join(letter, artist, album, recording)
                 database[recordingShortPath] = {
@@ -177,21 +169,19 @@ testWarningCount = 0
 testOkCount = 0
 errorCausingFiles = {}
 warningCausingFiles = {}
-okFiles = {}
-for path in database:
-  okFiles[path] = 1
+okFiles = {path: 1 for path in database}
 # Iterate through test modules
-for testModuleFilename in testModules:
-  print(boldText(testModuleFilename + ' tests') + ':')
+for testModuleFilename, value in testModules.items():
+  print(f"{boldText(f'{testModuleFilename} tests')}:")
   # Iterate through tests within the current test module
-  for testName in testModules[testModuleFilename]:
+  for testName in value:
     readableTestName = formatTestName(testName)
     testres = CODE_OK
     if testName == "testForTests":
       # Run self-tests only once instead of for every item in the database
       res = testModules[testModuleFilename]["testForTests"]()
       if res != CODE_OK:
-        print('Failed to pass ' + readableTestName.lower())
+        print(f'Failed to pass {readableTestName.lower()}')
         testErrorCount += 1
       if res > testres:
         testres = res
@@ -201,12 +191,20 @@ for testModuleFilename in testModules:
         item = database[path]
         res = testModules[testModuleFilename][testName](path, item['b'], item['p'], item['l'], item['m'], database)
         if res == CODE_ERR:
-          print('Failed to pass ' + readableTestName.lower() + ' (error):', path, file=sys.stderr)
+          print(
+              f'Failed to pass {readableTestName.lower()} (error):',
+              path,
+              file=sys.stderr,
+          )
           testErrorCount += 1
           errorCausingFiles[path] = 1
           okFiles.pop(path, None)
         elif res == CODE_WARN:
-          print('Failed to pass ' + readableTestName.lower() + ' (warning):', path, file=sys.stderr)
+          print(
+              f'Failed to pass {readableTestName.lower()} (warning):',
+              path,
+              file=sys.stderr,
+          )
           testWarningCount += 1
           warningCausingFiles[path] = 1
           okFiles.pop(path, None)

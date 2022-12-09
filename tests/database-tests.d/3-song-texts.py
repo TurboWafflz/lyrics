@@ -3,28 +3,22 @@ CODE_WARN = 1
 CODE_ERR  = 2
 
 def testForNoSpacesAroundLines(path, bytes, plaintext, lyrics, metadata, database):
-  for line in lyrics.splitlines():
-    if line.startswith(' ') or line.endswith(' '):
-      return CODE_ERR
-  return CODE_OK
+  return next(
+      (CODE_ERR for line in lyrics.splitlines()
+       if line.startswith(' ') or line.endswith(' ')),
+      CODE_OK,
+  )
 
 # More information available here: https://smartquotesforsmartpeople.com/
 def testForSmartQuotes(path, bytes, plaintext, lyrics, metadata, database):
   unusualChars = ["'", '"']
-  for char in unusualChars:
-    if char in lyrics:
-      return CODE_WARN
-  return CODE_OK
+  return next((CODE_WARN for char in unusualChars if char in lyrics), CODE_OK)
 
 def testForNoWideGaps(path, bytes, plaintext, lyrics, metadata, database):
-  if '\n\n\n' in lyrics:
-    return CODE_WARN
-  return CODE_OK
+  return CODE_WARN if '\n\n\n' in lyrics else CODE_OK
 
 def testForProperEllipses(path, bytes, plaintext, lyrics, metadata, database):
-  if '..' in lyrics:
-    return CODE_WARN
-  return CODE_OK
+  return CODE_WARN if '..' in lyrics else CODE_OK
 
 def testForTests(*_):
   def testTheTestForNoSpacesAroundLines():
