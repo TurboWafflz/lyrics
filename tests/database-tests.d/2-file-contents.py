@@ -3,26 +3,17 @@ CODE_WARN = 1
 CODE_ERR  = 2
 
 def testForNewlineAtEndOfFile(path, bytes, plaintext, lyrics, metadata, database):
-  if not plaintext.endswith('\n'):
-    return CODE_ERR
-  return CODE_OK
+  return CODE_OK if plaintext.endswith('\n') else CODE_ERR
 
 def testForNoCarriageReturns(path, bytes, plaintext, lyrics, metadata, database):
-  if '\r' in plaintext:
-    return CODE_ERR
-  return CODE_OK
+  return CODE_ERR if '\r' in plaintext else CODE_OK
 
 def testForNoEmptyFiles(path, bytes, plaintext, lyrics, metadata, database):
-  if len(plaintext) == 0:
-    return CODE_ERR
-  return CODE_OK
+  return CODE_ERR if len(plaintext) == 0 else CODE_OK
 
 def testForNoUnusualCharacters(path, bytes, plaintext, lyrics, metadata, database):
   unusualChars = ['`', '©']
-  for char in unusualChars:
-    if char in plaintext:
-      return CODE_ERR
-  return CODE_OK
+  return next((CODE_ERR for char in unusualChars if char in plaintext), CODE_OK)
 
 def testForTests(*_):
   def testTheTestForNewlineAtEndOfFile():
